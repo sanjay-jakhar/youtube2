@@ -110,6 +110,8 @@ def main():
     upload = not args.no_upload and not args.test
     count  = args.count if not args.test else 1
 
+    any_failed = False
+
     for i in range(count):
         if args.genre:
             genre = args.genre
@@ -132,14 +134,26 @@ def main():
             return str(s).encode("ascii", "replace").decode("ascii") if s else ""
 
         if result["status"] == "success":
-            print(f"\n[OK] Video {i+1} done!")
-            print(f"    Title:  {safe(result.get('title'))}")
-            if result.get("video_id"):
-                print(f"    URL:    https://youtu.be/{result['video_id']}")
-            if result.get("video_path"):
-                print(f"    File:   {result['video_path']}")
+            yt_id = result.get("video_id")
+            if upload and not yt_id:
+                print(f"\n[FAIL] Video {i+1} generated but YouTube upload FAILED!")
+                print(f"    Title: {safe(result.get('title'))}")
+                print(f"    File:  {safe(result.get('video_path'))}")
+                print("    Check: YouTube channel exists? Token valid? API quota ok?")
+                any_failed = True
+            else:
+                print(f"\n[OK] Video {i+1} done!")
+                print(f"    Title:  {safe(result.get('title'))}")
+                if yt_id:
+                    print(f"    URL:    https://youtu.be/{yt_id}")
+                if result.get("video_path"):
+                    print(f"    File:   {result['video_path']}")
         else:
             print(f"\n[FAIL] Video {i+1} failed: {safe(result.get('error'))}")
+            any_failed = True
+
+    if any_failed:
+        sys.exit(1)
 
     print("\n" + "=" * 60)
     print("  Done! Check the output/ folder for your videos.")

@@ -141,9 +141,12 @@ class YouTubeUploader:
 
         if not creds or not creds.valid:
             if not os.path.exists(Config.YT_CLIENT_SECRETS):
+                logger.error("client_secrets.json not found. Run setup_youtube.py first.")
+                return None
+            if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
                 logger.error(
-                    "client_secrets.json not found. "
-                    "Run setup_youtube.py first."
+                    "YouTube token is invalid/expired in CI — cannot open browser to re-auth. "
+                    "Re-run setup_youtube.py locally and update YOUTUBE_TOKEN_B64 secret."
                 )
                 return None
             flow = InstalledAppFlow.from_client_secrets_file(
