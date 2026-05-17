@@ -425,10 +425,11 @@ def _apply_color_grade(video: str, output: str, grade: str) -> str | None:
 
 
 def _run_ffmpeg(cmd: list, output: str) -> str | None:
+    import sys
+    kwargs = {"creationflags": 0x08000000} if sys.platform == "win32" else {}
     try:
         result = subprocess.run(
-            cmd, capture_output=True, check=True, timeout=600,
-            creationflags=0x08000000  # CREATE_NO_WINDOW on Windows
+            cmd, capture_output=True, check=True, timeout=600, **kwargs
         )
         if os.path.exists(output):
             return output
