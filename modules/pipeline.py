@@ -46,6 +46,7 @@ class VideoPipeline:
         force_short: bool = False,
         story_mode: bool = False,
         facts_mode: bool = False,
+        cinematic_mode: bool = False,
     ) -> dict:
         mode = "facts" if facts_mode else ("story" if story_mode else "cinematic")
         video_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:6]
@@ -159,7 +160,7 @@ class VideoPipeline:
                 result = self.voice_gen.generate(
                     text=narration,
                     voice_key="narrator_female",
-                    emotion="excited" if idx == 0 else "normal",
+                    emotion="mysterious" if idx == 0 else "normal",
                     output_path=audio_file,
                 )
                 if result:

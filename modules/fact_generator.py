@@ -1,6 +1,6 @@
 """
-Fact video generator — generates interesting Hindi facts with cinematic visuals.
-Female voice narrates facts over stunning background visuals.
+Fact video generator — viral Hindi facts with shocking narration.
+Female voice narrates mind-blowing facts over cinematic visuals.
 """
 
 import json
@@ -17,26 +17,69 @@ USED_TITLES_FILE  = "output/used_titles.json"
 USED_TOPICS_FILE  = "output/used_topics.json"
 
 FACT_TOPICS = [
-    "universe and space",
-    "deep ocean secrets",
-    "human body amazing facts",
-    "ancient India history",
-    "dangerous animals",
-    "mind-blowing science",
-    "earth and nature",
-    "technology and AI future",
-    "mysterious places on earth",
-    "world records",
-    "psychology and brain",
-    "dinosaurs and prehistoric life",
-    "quantum physics simple facts",
-    "Indian history and culture",
-    "solar system planets",
-    "volcanoes and earthquakes",
-    "sharks and ocean predators",
+    # Science & Space
+    "universe and space shocking facts",
     "black holes and galaxies",
+    "solar system planets",
+    "quantum physics mind-blowing",
+    "time travel science facts",
+    "parallel universe theory",
+    "sun and stars shocking facts",
+    "moon mysteries and secrets",
+
+    # Earth & Nature
+    "deep ocean terrifying secrets",
+    "earth's core and volcanoes",
     "extreme weather phenomena",
+    "dinosaurs and prehistoric life",
+    "dangerous animals shocking facts",
+    "sharks and ocean predators",
+    "mysterious places on earth",
+    "ancient trees and forest secrets",
+
+    # Human Body & Mind
+    "human body amazing hidden facts",
+    "brain and psychology shocking facts",
+    "sleep and dreams science",
+    "human senses unbelievable facts",
+    "memory and consciousness facts",
+    "fear and adrenaline science",
+
+    # History & Civilization
+    "ancient India history mysteries",
+    "Indian history and culture shocking",
     "ancient civilizations secrets",
+    "pyramids and egypt mysteries",
+    "world wars hidden facts",
+    "Indian kings and empires secrets",
+
+    # Technology & Future
+    "technology and AI shocking future",
+    "internet hidden secrets",
+    "robots and automation future",
+    "space travel future facts",
+
+    # Viral / Shocking
+    "world records unbelievable facts",
+    "money and wealth shocking facts",
+    "food and eating shocking science",
+    "animals with superpowers",
+    "luck and coincidence shocking stories",
+    "numbers and mathematics shocking",
+    "optical illusions brain facts",
+    "death and afterlife science",
+]
+
+# Opening hook templates to mix into prompts for variety
+HOOK_STYLES = [
+    "Kya aap jaante hain ki...",
+    "99% log yeh nahi jaante...",
+    "Yeh sun ke aapko yakeen nahi hoga...",
+    "Vigyanik bhi hairaan hain ki...",
+    "Agar aap yeh sach jaante toh...",
+    "Aaj tak kisi ne aapko nahi bataya...",
+    "Duniya ki sabse shocking sach...",
+    "Yeh fact aapki zindagi badal dega...",
 ]
 
 
@@ -51,11 +94,10 @@ class FactGenerator:
         if not topic:
             topic = self._pick_fresh_topic()
 
-        # Facts are Shorts — 1 or 2 facts only, 40-55 seconds total
-        duration = random.randint(40, 55)
-        facts_n  = random.randint(1, 2)
+        duration = random.randint(45, 58)
+        hook_style = random.choice(HOOK_STYLES)
 
-        prompt = self._build_prompt(topic, facts_n, duration)
+        prompt = self._build_prompt(topic, duration, hook_style)
 
         try:
             resp = self.client.chat.completions.create(
@@ -64,8 +106,8 @@ class FactGenerator:
                     {"role": "system", "content": self._system_prompt()},
                     {"role": "user",   "content": prompt},
                 ],
-                temperature=0.88,
-                max_tokens=2500,
+                temperature=0.92,
+                max_tokens=2800,
             )
             raw  = resp.choices[0].message.content
             data = self._extract_json(raw)
@@ -93,55 +135,62 @@ class FactGenerator:
     @staticmethod
     def _system_prompt() -> str:
         return (
-            "You are a viral Hindi YouTube facts creator. "
-            "You write shocking, mind-blowing facts in simple Hindi that keep viewers hooked. "
-            "ALWAYS respond with valid JSON only — no markdown, no code fences."
+            "Aap ek viral Hindi YouTube facts creator hain. "
+            "Aap shocking, mind-blowing facts likhte hain jo viewers ko screen se chipka dete hain. "
+            "Aapki style dramatic, emotional aur unbelievable hai. "
+            "Har fact ek movie scene ki tarah feel hona chahiye. "
+            "Sirf VALID JSON return karein — koi markdown nahi, koi code fences nahi."
         )
 
-    def _build_prompt(self, topic: str, facts_n: int, duration: int) -> str:
+    def _build_prompt(self, topic: str, duration: int, hook_style: str) -> str:
         avoid = ", ".join(self.used_titles[-20:]) if self.used_titles else "None"
 
-        return f"""Create a viral Hindi YouTube facts Short video about: {topic}
+        return f"""Ek VIRAL Hindi YouTube Shorts fact video banao topic: {topic}
 
-FORMAT: YouTube Short (9:16 vertical, {duration} seconds)
-FACTS COUNT: exactly {facts_n} fact(s) — no more
-LANGUAGE: Hindi (Devanagari) — simple, clear, conversational
+FORMAT: YouTube Short (9:16 vertical, {duration} seconds, 1 scene only)
+LANGUAGE: Hindi (Devanagari) — simple, dramatic, emotional
+HOOK STYLE: "{hook_style}" se shuru karo
 AVOID TITLES: {avoid}
 
-RULES:
-- Start with a SHOCKING hook line that grabs attention in 2-3 seconds
-- Each fact must be mind-blowing and hard to believe — 2-3 Hindi sentences max
-- Female voice will narrate (Swara AI voice)
-- Cinematic visuals play in background — NO text in images at all
-- End with "Aisa hi aur jaanne ke liye follow karo!"
-- Each fact must be detailed — 4-6 Hindi sentences, explain WHY it's shocking
-- estimated_duration must be 20-28 seconds per scene (enough time for voice narration)
+STRICT RULES:
+1. Ek hi SCENE hoga jisme poori fact story hogi (40-55 seconds ki narration)
+2. Narration 4 parts mein hona chahiye:
+   - HOOK (2-3 lines): Shocking opening question ya statement — viewer ko rok do
+   - FACT BODY (6-8 lines): Asli fact — numbers, details, comparisons, "kyon" aur "kaise" samjhao
+   - WOW MOMENT (2-3 lines): Sabse shocking part — ekdum unbelievable reveal
+   - CALL TO ACTION (1 line): "Aisa hi aur chahiye toh follow karo!"
+3. SHOCKING facts likhni hain — real ya slightly exaggerated, viewer shocked hona chahiye
+4. Numbers use karo: "93 crore kilometer", "10,000 saal pehle", "99.9% log nahi jaante"
+5. Comparisons use karo: "Yeh Taj Mahal se 1000 guna bada hai"
+6. 3 different image prompts dena — different angles of same topic, NO text in images
+7. Image prompts must be in English — ultra-realistic, cinematic, photorealistic, 8K, NO text
 
-Return ONLY this JSON:
+Return ONLY this JSON (no markdown):
 {{
-  "title": "Viral Hindi title — shocking, max 65 chars",
-  "thumbnail_text": "Max 4 bold words",
-  "thumbnail_mood": "dark|bright|mysterious|dramatic",
+  "title": "Viral shocking Hindi title — max 65 chars, use numbers if possible",
+  "thumbnail_text": "3-4 shocking bold Hindi words",
+  "thumbnail_mood": "dark|mysterious|bright|dramatic",
   "thumbnail_main_color": "#FF4444",
-  "hook": "3-4 second shocking opening question in Hindi",
+  "hook": "2-3 second shocking opening line in Hindi",
   "scenes": [
     {{
       "scene_number": 1,
-      "fact_text": "Detailed Hindi narration — 4-6 sentences, explain the fact with wow details, shocking and clear",
+      "fact_text": "Complete narration in Hindi — HOOK (3 lines) + FACT BODY (8 lines) + WOW MOMENT (3 lines) + CALL TO ACTION. Total 50-55 seconds when spoken. Use dramatic pauses with '...' Use shocking numbers and comparisons.",
       "image_prompts": [
-        "Image 1 — wide establishing shot matching this fact, ultra-realistic, 8K, NO text, NO words, photorealistic, cinematic",
-        "Image 2 — close-up dramatic detail of the same fact, different angle, ultra-realistic, 8K, NO text, NO words, photorealistic",
-        "Image 3 — another stunning perspective of same fact, ultra-realistic, 8K, NO text, NO words, photorealistic, cinematic lighting"
+        "Wide establishing shot matching {topic} — ultra-realistic photorealistic cinematic 8K dramatic lighting NO text NO words",
+        "Close-up dramatic detail of same topic — different angle ultra-realistic 8K NO text stunning",
+        "Another perspective of same topic — night sky or golden hour ultra-realistic cinematic NO text"
       ],
-      "estimated_duration": 22,
-      "sfx": "wind|waves|space|forest|ambient",
+      "estimated_duration": 52,
+      "sfx": "wind|space|waves|heartbeat|rumble",
       "music_mood": "mysterious|epic_cinematic|dramatic_orchestral|suspense",
       "motion_type": "zoom_in|zoom_out|pan_left|pan_right|tilt_up",
       "color_grade": "dark_dramatic|blue_cold|teal_orange|night_glow|golden_hour"
     }}
   ],
   "outro": "Aisa hi aur jaanne ke liye follow karo!",
-  "tags": ["facts hindi", "amazing facts", "rochak tathya", "hindi facts"]
+  "genre": "{topic.split()[0]}",
+  "tags": ["facts hindi", "amazing facts", "rochak tathya", "hindi facts", "{topic}"]
 }}"""
 
     def _extract_json(self, raw: str) -> dict | None:
@@ -158,8 +207,7 @@ Return ONLY this JSON:
         return None
 
     def _pick_fresh_topic(self) -> str:
-        # Avoid last 10 used topics; if all used, reset
-        recent = set(self.used_topics[-10:])
+        recent = set(self.used_topics[-12:])
         fresh  = [t for t in FACT_TOPICS if t not in recent]
         if not fresh:
             fresh = FACT_TOPICS

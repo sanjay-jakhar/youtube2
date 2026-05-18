@@ -85,8 +85,13 @@ def main():
     parser.add_argument("--shorts",     action="store_true", default=True, help="Force YouTube Shorts (under 60s, 9:16 vertical) — default ON")
     parser.add_argument("--story",      action="store_true", help="Story mode — Hindi narration (legacy)")
     parser.add_argument("--facts",      action="store_true", help="Facts mode — female voice narrates Hindi facts over cinematic visuals")
+    parser.add_argument("--cinematic",  action="store_true", help="Cinematic mode — pure visuals, no narration")
     parser.add_argument("--privacy",    default="public", choices=["public", "unlisted", "private"])
     args = parser.parse_args()
+
+    # Default to facts mode when no mode flag is given
+    if not args.story and not args.facts and not args.cinematic:
+        args.facts = True
 
     setup_logging()
     logger = logging.getLogger("main")
@@ -128,6 +133,7 @@ def main():
             force_short=args.shorts,
             story_mode=args.story,
             facts_mode=args.facts,
+            cinematic_mode=args.cinematic,
         )
 
         def safe(s):
