@@ -135,54 +135,55 @@ class FactGenerator:
     @staticmethod
     def _system_prompt() -> str:
         return (
-            "Aap ek viral Hindi YouTube facts creator hain. "
-            "Aap shocking, mind-blowing facts likhte hain jo viewers ko screen se chipka dete hain. "
-            "Aapki style dramatic, emotional aur unbelievable hai. "
-            "Har fact ek movie scene ki tarah feel hona chahiye. "
+            "Aap ek viral Hindi YouTube Shorts creator hain. "
+            "Aap EK shocking, mind-blowing fact ke baare mein deep-dive karte hain — "
+            "sirf ek fact, lekin itna detailed aur dramatic ki viewer hairan reh jaaye. "
+            "Title mein KABHI bhi '5 facts', '10 facts', ya koi number mat likhna — "
+            "sirf ek specific fact ka dramatic naam hona chahiye Hindi mein. "
             "Sirf VALID JSON return karein — koi markdown nahi, koi code fences nahi."
         )
 
     def _build_prompt(self, topic: str, duration: int, hook_style: str) -> str:
         avoid = ", ".join(self.used_titles[-20:]) if self.used_titles else "None"
 
-        return f"""Ek VIRAL Hindi YouTube Shorts fact video banao topic: {topic}
+        return f"""Ek VIRAL Hindi YouTube Short banao — SIRF EK shocking fact ke baare mein: {topic}
 
-FORMAT: YouTube Short (9:16 vertical, {duration} seconds, 1 scene only)
-LANGUAGE: Hindi (Devanagari) — simple, dramatic, emotional
-HOOK STYLE: "{hook_style}" se shuru karo
+FORMAT: YouTube Short (9:16 vertical, {duration} seconds)
+LANGUAGE: Sirf Hindi (Devanagari) — simple, dramatic, emotional
+HOOK: "{hook_style}" style se shuru karo
 AVOID TITLES: {avoid}
 
 STRICT RULES:
-1. Ek hi SCENE hoga jisme poori fact story hogi (40-55 seconds ki narration)
-2. Narration 4 parts mein hona chahiye:
-   - HOOK (2-3 lines): Shocking opening question ya statement — viewer ko rok do
-   - FACT BODY (6-8 lines): Asli fact — numbers, details, comparisons, "kyon" aur "kaise" samjhao
-   - WOW MOMENT (2-3 lines): Sabse shocking part — ekdum unbelievable reveal
-   - CALL TO ACTION (1 line): "Aisa hi aur chahiye toh follow karo!"
-3. SHOCKING facts likhni hain — real ya slightly exaggerated, viewer shocked hona chahiye
-4. Numbers use karo: "93 crore kilometer", "10,000 saal pehle", "99.9% log nahi jaante"
-5. Comparisons use karo: "Yeh Taj Mahal se 1000 guna bada hai"
-6. 3 different image prompts dena — different angles of same topic, NO text in images
-7. Image prompts must be in English — ultra-realistic, cinematic, photorealistic, 8K, NO text
+1. SIRF EK hi specific fact — koi list nahi, koi "X facts" nahi
+2. Title Hindi mein hona chahiye — dramatic, emotional, shocking
+   GALAT: "5 Amazing Space Facts" / "10 Shocking Facts"
+   SAHI: "सूरज का यह सच सुनकर आप कांप जाएंगे" / "इंसानी दिमाग का यह राज़ कोई नहीं जानता"
+3. Narration ek hi continuous story ki tarah hona chahiye:
+   - HOOK (3 lines): "{hook_style}" se shocking opening
+   - DEEP DIVE (8-10 lines): Asli fact — numbers, comparisons, "kyon" aur "kaise"
+   - WOW REVEAL (2-3 lines): Sabse unbelievable part
+   - CTA (1 line): "Aisa hi aur jaanne ke liye follow karo!"
+4. Numbers aur comparisons zaroor use karo
+5. thumbnail_image_prompt = ek English sentence jo is fact ka best cinematic visual describe kare
 
-Return ONLY this JSON (no markdown):
+Return ONLY this JSON (no markdown, no code fences):
 {{
-  "title": "Viral shocking Hindi title — max 65 chars, use numbers if possible",
-  "thumbnail_text": "3-4 shocking bold Hindi words",
-  "thumbnail_mood": "dark|mysterious|bright|dramatic",
-  "thumbnail_main_color": "#FF4444",
-  "hook": "2-3 second shocking opening line in Hindi",
+  "title": "Dramatic Hindi title about ONE specific fact — max 65 chars, NO numbers in title",
+  "thumbnail_text": "3-4 bold Hindi words (Devanagari only)",
+  "thumbnail_mood": "dark|mysterious|dramatic|scary|emotional",
+  "thumbnail_image_prompt": "One cinematic English image prompt for this fact — ultra-realistic 8K photorealistic dramatic lighting NO text NO words",
+  "hook": "2-3 second shocking Hindi opening line",
   "scenes": [
     {{
       "scene_number": 1,
-      "fact_text": "Complete narration in Hindi — HOOK (3 lines) + FACT BODY (8 lines) + WOW MOMENT (3 lines) + CALL TO ACTION. Total 50-55 seconds when spoken. Use dramatic pauses with '...' Use shocking numbers and comparisons.",
+      "fact_text": "Complete Hindi narration — HOOK + DEEP DIVE + WOW REVEAL + CTA. Total 50-55 seconds when spoken at normal pace. Use '...' for dramatic pauses. Use shocking numbers.",
       "image_prompts": [
-        "Wide establishing shot matching {topic} — ultra-realistic photorealistic cinematic 8K dramatic lighting NO text NO words",
-        "Close-up dramatic detail of same topic — different angle ultra-realistic 8K NO text stunning",
-        "Another perspective of same topic — night sky or golden hour ultra-realistic cinematic NO text"
+        "Wide cinematic shot — ultra-realistic photorealistic 8K dramatic lighting NO text NO words",
+        "Close-up dramatic detail — different angle ultra-realistic 8K stunning cinematic NO text",
+        "Another dramatic angle — golden hour or night sky ultra-realistic cinematic NO text"
       ],
       "estimated_duration": 52,
-      "sfx": "wind|space|waves|heartbeat|rumble",
+      "sfx": "wind|space|waves|heartbeat|rumble|forest",
       "music_mood": "mysterious|epic_cinematic|dramatic_orchestral|suspense",
       "motion_type": "zoom_in|zoom_out|pan_left|pan_right|tilt_up",
       "color_grade": "dark_dramatic|blue_cold|teal_orange|night_glow|golden_hour"
@@ -190,7 +191,7 @@ Return ONLY this JSON (no markdown):
   ],
   "outro": "Aisa hi aur jaanne ke liye follow karo!",
   "genre": "{topic.split()[0]}",
-  "tags": ["facts hindi", "amazing facts", "rochak tathya", "hindi facts", "{topic}"]
+  "tags": ["facts hindi", "amazing facts", "rochak tathya", "hindi facts"]
 }}"""
 
     def _extract_json(self, raw: str) -> dict | None:

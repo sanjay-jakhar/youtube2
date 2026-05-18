@@ -90,7 +90,11 @@ class VideoPipeline:
             raise RuntimeError("Video assembly failed")
 
         logger.info("Step 4/6 — Generating thumbnail...")
-        thumb_prompt = data.get("scenes", [{}])[0].get("image_prompt", "amazing facts cinematic")
+        scene0       = data.get("scenes", [{}])[0]
+        thumb_prompt = (data.get("thumbnail_image_prompt")
+                        or scene0.get("thumbnail_image_prompt")
+                        or (scene0.get("image_prompts") or [""])[0]
+                        or scene0.get("image_prompt", "cinematic dramatic scene"))
         thumb_base   = self.img_gen.generate_thumbnail_image(thumb_prompt, video_id, mood=data.get("thumbnail_mood", "dramatic"))
         thumbnail    = self.thumb_cr.create(data, video_id, thumb_base)
 

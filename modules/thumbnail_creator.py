@@ -233,6 +233,16 @@ class ThumbnailCreator:
             os.path.join(Config.FONTS_DIR, "NotoSansDevanagari-Bold.ttf"),
             os.path.join(Config.FONTS_DIR, "NotoSansDevanagari-Regular.ttf"),
             os.path.join(Config.FONTS_DIR, "NotoSans-Bold.ttf"),
+            os.path.join(Config.FONTS_DIR, "NotoSans-Regular.ttf"),
+            # System fonts (Windows)
+            r"C:\Windows\Fonts\arialbd.ttf",
+            r"C:\Windows\Fonts\arial.ttf",
+            r"C:\Windows\Fonts\verdanab.ttf",
+            r"C:\Windows\Fonts\verdana.ttf",
+            # Linux (GitHub Actions)
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         ]
         for path in candidates:
             if os.path.exists(path):
@@ -240,7 +250,4 @@ class ThumbnailCreator:
                     return ImageFont.truetype(path, size)
                 except Exception:
                     pass
-        try:
-            return ImageFont.truetype("arial.ttf", size)
-        except Exception:
-            return ImageFont.load_default()
+        return ImageFont.load_default()
