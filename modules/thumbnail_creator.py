@@ -1,12 +1,15 @@
 """
 Creates eye-catching YouTube thumbnails with:
-  - AI-generated background image (Pollinations.ai)
-  - Bold Hindi text overlay
-  - Cinematic vignette + color grading
-  - High-contrast border effects
+  - AI-generated background image
+  - Large bold Hindi title in center
+  - Colored banner strip behind text
+  - Glowing multi-outline text effect
+  - Vignette + cinematic color grading
+  - Top genre badge + bottom channel tag
 """
 
 import os
+import random
 import logging
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 
@@ -16,17 +19,23 @@ logger = logging.getLogger(__name__)
 
 THUMB_W, THUMB_H = 1280, 720
 
-# Preset color schemes per mood
-MOOD_COLORS = {
-    "dark":        {"bg": (10, 5, 20),    "text": (255, 60, 60),   "shadow": (200, 0, 0)},
-    "scary":       {"bg": (5, 0, 0),      "text": (255, 30, 30),   "shadow": (180, 0, 0)},
-    "emotional":   {"bg": (10, 20, 40),   "text": (255, 220, 80),  "shadow": (200, 140, 0)},
-    "mysterious":  {"bg": (15, 10, 30),   "text": (160, 100, 255), "shadow": (80, 0, 180)},
-    "bright":      {"bg": (255, 240, 200),"text": (30, 30, 180),   "shadow": (0, 0, 100)},
-    "action":      {"bg": (20, 10, 0),    "text": (255, 160, 0),   "shadow": (180, 60, 0)},
-    "romantic":    {"bg": (30, 5, 20),    "text": (255, 120, 180), "shadow": (180, 0, 80)},
-    "default":     {"bg": (10, 10, 10),   "text": (255, 255, 255), "shadow": (100, 100, 100)},
+# Mood → color palette: (banner_color, text_color, glow_color, badge_color)
+MOOD_PALETTES = {
+    "dark":       ((180, 0,   20),  (255, 255, 255), (255, 60,  60),  (200, 0,   0)),
+    "scary":      ((120, 0,   0),   (255, 230, 50),  (255, 80,  0),   (160, 0,   0)),
+    "horror":     ((80,  0,   0),   (255, 220, 50),  (255, 50,  0),   (130, 0,   0)),
+    "emotional":  ((20,  40,  120), (255, 240, 80),  (255, 200, 0),   (30,  60,  180)),
+    "mysterious": ((40,  0,   100), (200, 140, 255), (120, 0,   200), (60,  0,   140)),
+    "bright":     ((0,   100, 200), (255, 255, 60),  (0,   200, 255), (0,   140, 255)),
+    "action":     ((200, 80,  0),   (255, 255, 255), (255, 160, 0),   (220, 60,  0)),
+    "romantic":   ((140, 0,   60),  (255, 200, 220), (255, 100, 160), (180, 0,   80)),
+    "universe":   ((0,   20,  80),  (150, 220, 255), (0,   150, 255), (0,   40,  120)),
+    "space":      ((0,   10,  50),  (180, 230, 255), (0,   180, 255), (0,   30,  100)),
+    "default":    ((20,  20,  20),  (255, 220, 0),   (255, 160, 0),   (60,  60,  60)),
 }
+
+# Layout variants — text position and style
+LAYOUTS = ["center", "center", "lower_third", "upper_third"]
 
 
 class ThumbnailCreator:
@@ -38,61 +47,92 @@ class ThumbnailCreator:
         base_image_path: str | None = None,
     ) -> str | None:
         mood      = story.get("thumbnail_mood", "default")
-        text      = story.get("thumbnail_text", story.get("title", "")[:20])
-        color_key = self._map_mood(mood)
-        colors    = MOOD_COLORS[color_key]
+        title     = story.get("title", story.get("thumbnail_text", ""))
+        palette   = self._pick_palette(mood)
+        layout    = random.choice(LAYOUTS)
+        genre_tag = story.get("genre", story.get("topic", ""))
 
         out_path = os.path.join(Config.THUMBS_DIR, f"{story_id}_thumb.jpg")
         os.makedirs(Config.THUMBS_DIR, exist_ok=True)
 
-        # ── 1. Base image ──────────────────────────────────────────────────────
+        # ── 1. Background ─────────────────────────────────────────────────────
         if base_image_path and os.path.exists(base_image_path):
             img = Image.open(base_image_path).convert("RGB")
             img = img.resize((THUMB_W, THUMB_H), Image.LANCZOS)
         else:
-            img = self._gradient_bg(colors["bg"], THUMB_W, THUMB_H)
+            img = self._gradient_bg(palette[0], THUMB_W, THUMB_H)
 
-        # ── 2. Color grading ───────────────────────────────────────────────────
-        img = ImageEnhance.Contrast(img).enhance(1.4)
-        img = ImageEnhance.Color(img).enhance(1.3)
-        img = ImageEnhance.Brightness(img).enhance(0.85)
+        # ── 2. Cinematic color grade ──────────────────────────────────────────
+        img = ImageEnhance.Contrast(img).enhance(1.5)
+        img = ImageEnhance.Color(img).enhance(1.4)
+        img = ImageEnhance.Brightness(img).enhance(0.80)
+        img = ImageEnhance.Sharpness(img).enhance(1.3)
 
-        # ── 3. Vignette ────────────────────────────────────────────────────────
-        img = self._add_vignette(img)
+        # ── 3. Vignette ───────────────────────────────────────────────────────
+        img = self._add_vignette(img, strength=0.65)
 
-        # ── 4. Dark bottom strip for text readability ──────────────────────────
         draw = ImageDraw.Draw(img, "RGBA")
-        strip_h = THUMB_H // 3
-        for y in range(THUMB_H - strip_h, THUMB_H):
-            alpha = int(200 * ((y - (THUMB_H - strip_h)) / strip_h))
-            draw.line([(0, y), (THUMB_W, y)], fill=(0, 0, 0, alpha))
 
-        # ── 5. Main text ───────────────────────────────────────────────────────
-        font_large = self._load_font(80)
-        font_small = self._load_font(44)
+        # ── 4. Text layout ────────────────────────────────────────────────────
+        lines = self._wrap_text(title, max_chars=18)
+        font_title  = self._load_font(96 if len(lines) <= 2 else 76)
+        font_badge  = self._load_font(34)
+        font_channel = self._load_font(32)
 
-        text_color  = colors["text"]
-        shadow_col  = colors["shadow"]
+        if layout == "center":
+            text_center_y = THUMB_H // 2
+        elif layout == "upper_third":
+            text_center_y = THUMB_H // 3
+        else:  # lower_third
+            text_center_y = THUMB_H * 2 // 3
 
-        self._draw_text_with_shadow(
-            draw, text, font_large, text_color, shadow_col,
-            (THUMB_W // 2, THUMB_H - 120), anchor="mm"
+        line_h   = font_title.size + 16
+        block_h  = line_h * len(lines)
+        block_top = text_center_y - block_h // 2
+
+        # ── 5. Text banner strip ──────────────────────────────────────────────
+        banner_color = (*palette[0], 200)
+        pad_v, pad_h = 22, 60
+        draw.rounded_rectangle(
+            [pad_h // 2, block_top - pad_v,
+             THUMB_W - pad_h // 2, block_top + block_h + pad_v],
+            radius=18,
+            fill=banner_color,
         )
 
-        # Channel name small tag
-        channel = Config.CHANNEL_NAME[:20]
-        self._draw_text_with_shadow(
-            draw, channel, font_small, (200, 200, 200), (0, 0, 0),
-            (THUMB_W // 2, THUMB_H - 45), anchor="mm"
-        )
+        # ── 6. Title text with glow ───────────────────────────────────────────
+        text_color = palette[1]
+        glow_color = palette[2]
+        for i, line in enumerate(lines):
+            y = block_top + i * line_h + line_h // 2
+            self._draw_glowing_text(draw, line, font_title, text_color, glow_color,
+                                    (THUMB_W // 2, y))
 
-        # ── 6. Glowing border ─────────────────────────────────────────────────
-        draw.rectangle(
-            [4, 4, THUMB_W - 4, THUMB_H - 4],
-            outline=(*text_color, 180), width=5
-        )
+        # ── 7. Top-left genre badge ───────────────────────────────────────────
+        if genre_tag:
+            badge_text = f"#{genre_tag[:14]}"
+            bw = self._text_width(badge_text, font_badge) + 28
+            draw.rounded_rectangle([14, 14, 14 + bw, 14 + 48],
+                                    radius=10, fill=(*palette[3], 230))
+            draw.text((14 + bw // 2, 38), badge_text, font=font_badge,
+                      fill=(255, 255, 255, 255), anchor="mm")
 
-        # ── 7. Save ────────────────────────────────────────────────────────────
+        # ── 8. Bottom channel name ─────────────────────────────────────────────
+        channel = Config.CHANNEL_NAME[:24]
+        draw.rectangle([0, THUMB_H - 52, THUMB_W, THUMB_H],
+                       fill=(0, 0, 0, 160))
+        draw.text((THUMB_W // 2, THUMB_H - 26), channel, font=font_channel,
+                  fill=(220, 220, 220, 255), anchor="mm")
+
+        # ── 9. Accent border ──────────────────────────────────────────────────
+        for i, width in enumerate([8, 4, 2]):
+            alpha = [120, 180, 255][i]
+            draw.rectangle([i * 4, i * 4, THUMB_W - i * 4, THUMB_H - i * 4],
+                           outline=(*glow_color, alpha), width=width)
+
+        # ── 10. Corner accents ────────────────────────────────────────────────
+        self._draw_corner_accents(draw, glow_color)
+
         img.convert("RGB").save(out_path, "JPEG", quality=95)
         logger.info(f"Thumbnail saved: {out_path}")
         return out_path
@@ -100,56 +140,92 @@ class ThumbnailCreator:
     # ── Helpers ────────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _map_mood(mood: str) -> str:
+    def _pick_palette(mood: str) -> tuple:
         mood = mood.lower()
-        for key in MOOD_COLORS:
+        for key in MOOD_PALETTES:
             if key in mood:
-                return key
-        return "default"
+                return MOOD_PALETTES[key]
+        return MOOD_PALETTES["default"]
+
+    @staticmethod
+    def _wrap_text(text: str, max_chars: int = 18) -> list[str]:
+        words  = text.split()
+        lines  = []
+        line   = ""
+        for w in words:
+            if len(line) + len(w) + 1 <= max_chars:
+                line = (line + " " + w).strip()
+            else:
+                if line:
+                    lines.append(line)
+                line = w
+        if line:
+            lines.append(line)
+        return lines[:3]  # max 3 lines
+
+    @staticmethod
+    def _text_width(text: str, font) -> int:
+        bbox = font.getbbox(text)
+        return bbox[2] - bbox[0]
 
     @staticmethod
     def _gradient_bg(color: tuple, w: int, h: int) -> Image.Image:
         import numpy as np
         arr = np.zeros((h, w, 3), dtype=np.uint8)
+        c2  = tuple(min(int(c * 1.6), 255) for c in color)
         for y in range(h):
             t = y / h
-            r = int(color[0] + (color[0] * 0.3) * t)
-            g = int(color[1] + (color[1] * 0.3) * t)
-            b = int(color[2] + (color[2] * 0.3) * t)
-            arr[y, :] = [min(r, 255), min(g, 255), min(b, 255)]
+            arr[y, :] = [
+                int(color[0] * (1 - t) + c2[0] * t),
+                int(color[1] * (1 - t) + c2[1] * t),
+                int(color[2] * (1 - t) + c2[2] * t),
+            ]
         return Image.fromarray(arr)
 
     @staticmethod
-    def _add_vignette(img: Image.Image) -> Image.Image:
+    def _add_vignette(img: Image.Image, strength: float = 0.65) -> Image.Image:
         import numpy as np
-        w, h = img.size
-        arr = np.array(img, dtype=np.float32)
-        Y, X = np.ogrid[:h, :w]
+        w, h   = img.size
+        arr    = np.array(img, dtype=np.float32)
+        Y, X   = np.ogrid[:h, :w]
         cx, cy = w / 2, h / 2
-        mask = 1.0 - np.clip(
-            ((X - cx) ** 2 / (cx * 1.4) ** 2 + (Y - cy) ** 2 / (cy * 1.4) ** 2),
-            0, 1
-        )
-        arr = arr * mask[:, :, np.newaxis]
+        dist   = ((X - cx) / (cx * 1.2)) ** 2 + ((Y - cy) / (cy * 1.2)) ** 2
+        mask   = 1.0 - np.clip(dist * strength, 0, 1)
+        arr   *= mask[:, :, np.newaxis]
         return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
     @staticmethod
-    def _draw_text_with_shadow(
-        draw: ImageDraw.Draw,
-        text: str,
-        font: ImageFont.FreeTypeFont,
-        color: tuple,
-        shadow: tuple,
-        pos: tuple,
-        anchor: str = "mm",
+    def _draw_glowing_text(
+        draw, text, font, text_color, glow_color, pos, anchor="mm"
     ):
         x, y = pos
-        # Shadow
-        for dx, dy in [(-3, -3), (3, -3), (-3, 3), (3, 3)]:
+        # Outer glow (large blurry shadow)
+        for radius in [12, 8, 5]:
+            for dx in range(-radius, radius + 1, 3):
+                for dy in range(-radius, radius + 1, 3):
+                    if dx * dx + dy * dy <= radius * radius:
+                        a = int(100 * (1 - (dx * dx + dy * dy) / (radius * radius + 1)))
+                        draw.text((x + dx, y + dy), text, font=font,
+                                  fill=(*glow_color, a), anchor=anchor)
+        # Dark stroke (outline)
+        for dx, dy in [(-3, -3), (3, -3), (-3, 3), (3, 3),
+                       (-4, 0), (4, 0), (0, -4), (0, 4)]:
             draw.text((x + dx, y + dy), text, font=font,
-                      fill=(*shadow, 220), anchor=anchor)
+                      fill=(0, 0, 0, 255), anchor=anchor)
         # Main text
-        draw.text((x, y), text, font=font, fill=(*color, 255), anchor=anchor)
+        draw.text((x, y), text, font=font, fill=(*text_color, 255), anchor=anchor)
+
+    @staticmethod
+    def _draw_corner_accents(draw: ImageDraw.Draw, color: tuple, length: int = 60, width: int = 6):
+        c = (*color, 200)
+        corners = [
+            [(0, length), (0, 0), (length, 0)],
+            [(THUMB_W - length, 0), (THUMB_W, 0), (THUMB_W, length)],
+            [(0, THUMB_H - length), (0, THUMB_H), (length, THUMB_H)],
+            [(THUMB_W - length, THUMB_H), (THUMB_W, THUMB_H), (THUMB_W, THUMB_H - length)],
+        ]
+        for pts in corners:
+            draw.line(pts, fill=c, width=width)
 
     @staticmethod
     def _load_font(size: int) -> ImageFont.FreeTypeFont:
@@ -164,7 +240,6 @@ class ThumbnailCreator:
                     return ImageFont.truetype(path, size)
                 except Exception:
                     pass
-        # System fallback
         try:
             return ImageFont.truetype("arial.ttf", size)
         except Exception:
