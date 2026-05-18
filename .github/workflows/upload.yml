@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -37,12 +39,11 @@ jobs:
       - name: Generate and upload video
         run: python main.py --facts --privacy public
 
-      - name: Save used_topics and used_titles (so topics dont repeat next run)
-        uses: actions/upload-artifact@v4
-        with:
-          name: used-data
-          path: |
-            output/used_titles.json
-            output/used_topics.json
-          retention-days: 30
+      - name: Save used topics to repo (prevents topic repetition)
         if: always()
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add output/used_titles.json output/used_topics.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "chore: update used topics [skip ci]"
+          git push || true
