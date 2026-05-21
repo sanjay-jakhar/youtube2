@@ -34,6 +34,7 @@ jobs:
           echo '${{ secrets.YOUTUBE_TOKEN_B64 }}' | base64 -d > youtube_token.json
           printf 'GROQ_API_KEY=%s\n' '${{ secrets.GROQ_API_KEY }}' > .env
           printf 'FAL_KEY=%s\n' '${{ secrets.FAL_KEY }}' >> .env
+          printf 'MINIMAX_KEY=%s\n' '${{ secrets.MINIMAX_KEY }}' >> .env
           mkdir -p output/videos output/images output/audio output/stories output/thumbnails logs assets/music assets/fonts assets/sfx
 
       - name: Generate and upload 2 videos
