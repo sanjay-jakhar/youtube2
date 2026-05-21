@@ -134,6 +134,34 @@ class VideoAssembler:
                     if result:
                         audio_path = mixed
 
+        # ── If Kling AI already generated a video, use it directly ──────────
+        pre_video = asset.get("video_path")
+        if pre_video and os.path.exists(str(pre_video)):
+            logger.info(f"Scene {idx}: using Kling AI video")
+            raw_video = str(pre_video)
+            # Mux with audio and return
+            if audio_path and os.path.exists(audio_path):
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", raw_video.replace("\\", "/"),
+                    "-i", audio_path.replace("\\", "/"),
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "128k",
+                    "-shortest",
+                    out_clip.replace("\\", "/"),
+                ]
+            else:
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", raw_video.replace("\\", "/"),
+                    "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+                    "-c:a", "aac",
+                    "-t", str(duration),
+                    out_clip.replace("\\", "/"),
+                ]
+            return _run_ffmpeg(cmd, out_clip)
+
         # Support multiple images per scene — cycle through them
         image_paths = asset.get("image_paths") or ([image_path] if image_path else [])
         image_paths = [p for p in image_paths if p and os.path.exists(p)]

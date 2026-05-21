@@ -17,6 +17,7 @@ from modules.concept_generator import ConceptGenerator
 from modules.story_generator   import StoryGenerator
 from modules.fact_generator    import FactGenerator
 from modules.skit_generator    import SkitGenerator
+from modules.video_generator   import VideoGenerator
 from modules.voice_generator   import VoiceGenerator
 from modules.image_generator   import ImageGenerator
 from modules.video_assembler   import VideoAssembler
@@ -34,6 +35,7 @@ class VideoPipeline:
         self.story_gen   = StoryGenerator()
         self.fact_gen    = FactGenerator()
         self.skit_gen    = SkitGenerator()
+        self.video_gen   = VideoGenerator()
         self.voice_gen   = VoiceGenerator()
         self.img_gen     = ImageGenerator()
         self.video_asm   = VideoAssembler()
@@ -130,6 +132,7 @@ class VideoPipeline:
         for idx, scene in enumerate(scenes):
             logger.info(f"  Skit scene {idx+1}/{len(scenes)}...")
 
+            # 1. Generate character image
             img_path = self.img_gen.generate_scene_image(
                 prompt=scene.get("image_prompt", "funny Indian scene cinematic"),
                 scene_idx=idx,
@@ -137,15 +140,34 @@ class VideoPipeline:
                 is_short=True,
             )
 
+            # 2. Animate image with Kling AI → moving character video
+            video_path = None
+            if img_path and os.path.exists(img_path):
+                motion_prompt = scene.get("motion_prompt", "character moves naturally, cinematic fluid motion")
+                vid_dir  = os.path.join("output/videos", video_id)
+                os.makedirs(vid_dir, exist_ok=True)
+                vid_file = os.path.join(vid_dir, f"s{idx:02d}_kling.mp4")
+                logger.info(f"  Animating scene {idx+1} with Kling AI...")
+                video_path = self.video_gen.animate(
+                    image_path=img_path,
+                    motion_prompt=motion_prompt,
+                    output_path=vid_file,
+                    duration=5,
+                )
+                if video_path:
+                    logger.info(f"  Scene {idx+1} animated: {video_path}")
+                else:
+                    logger.warning(f"  Scene {idx+1} animation failed — using static image")
+
+            # 3. Generate voice narration
             audio_path = None
             actual_dur = float(scene.get("estimated_duration", 15))
             narration  = scene.get("narration", "").strip()
 
             if narration:
-                import os as _os
-                audio_dir  = _os.path.join("output/audio", video_id)
-                _os.makedirs(audio_dir, exist_ok=True)
-                audio_file = _os.path.join(audio_dir, f"s{idx:02d}_skit.mp3")
+                audio_dir  = os.path.join("output/audio", video_id)
+                os.makedirs(audio_dir, exist_ok=True)
+                audio_file = os.path.join(audio_dir, f"s{idx:02d}_skit.mp3")
 
                 result = self.voice_gen.generate(
                     text=narration,
@@ -159,7 +181,8 @@ class VideoPipeline:
                     audio_path = result
 
             scene_assets.append({
-                "image_path":  img_path,
+                "video_path":  video_path,   # Kling animated video (takes priority)
+                "image_path":  img_path,     # fallback if animation failed
                 "image_paths": [img_path] if img_path else [],
                 "audio_path":  audio_path,
                 "subtitles":   [],

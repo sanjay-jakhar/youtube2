@@ -182,6 +182,7 @@ Return ONLY valid JSON:
       "scene_number": 1,
       "narration": "Hindi narration — narrator + character dialogues. Fast and funny. Use '...' for dramatic pauses.",
       "image_prompt": "ultra-realistic photorealistic 8K cinematic [character] in [Indian setting], [specific action], hyperdetailed, dramatic lighting, NO text NO words",
+      "motion_prompt": "character walks confidently into frame, people around react with shock and amazement, natural fluid movement, cinematic",
       "emotion": "excited",
       "estimated_duration": 12
     }},
@@ -189,6 +190,7 @@ Return ONLY valid JSON:
       "scene_number": 2,
       "narration": "Main comedy scene narration with dialogues.",
       "image_prompt": "ultra-realistic photorealistic 8K [character] [action] in [Indian setting], shocked people around, cinematic, NO text",
+      "motion_prompt": "character gestures expressively while arguing or talking, other person reacts with surprise, both move naturally, funny interaction",
       "emotion": "happy",
       "estimated_duration": 26
     }},
@@ -196,6 +198,7 @@ Return ONLY valid JSON:
       "scene_number": 3,
       "narration": "Punchline + CTA — 'Yeh video apne dost ko bhejo... aur follow karo aisi aur masti ke liye!'",
       "image_prompt": "ultra-realistic photorealistic 8K [character] funny final pose in [Indian setting], crowd reaction, cinematic, NO text",
+      "motion_prompt": "character does a funny triumphant pose or walks away with swagger, crowd cheers or laughs, natural movement",
       "emotion": "excited",
       "estimated_duration": 13
     }}
