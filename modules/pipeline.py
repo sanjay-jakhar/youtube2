@@ -121,10 +121,6 @@ class VideoPipeline:
         characters  = data.get("characters", [])
         scene_assets = []
 
-        # Add hook as first narration in scene 1
-        hook  = data.get("hook", "")
-        outro = data.get("outro", "")
-
         for idx, scene in enumerate(scenes):
             logger.info(f"  Fact scene {idx+1}/{len(scenes)}...")
 
@@ -143,12 +139,8 @@ class VideoPipeline:
             if not img_paths:
                 img_paths = [None]
 
-            # Build narration text: hook on first scene, outro on last
+            # fact_text already contains full narration (hook + deep dive + outro)
             narration = scene.get("fact_text", "")
-            if idx == 0 and hook:
-                narration = hook + " " + narration
-            if idx == len(scenes) - 1 and outro:
-                narration = narration + " " + outro
 
             # Generate female voice narration
             audio_path   = None

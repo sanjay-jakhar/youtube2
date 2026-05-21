@@ -10,6 +10,7 @@ import os
 import logging
 from groq import Groq
 from config import Config
+from modules.trending_fetcher import fetch_trending_topics
 
 logger = logging.getLogger(__name__)
 
@@ -17,87 +18,107 @@ USED_TITLES_FILE  = "output/used_titles.json"
 USED_TOPICS_FILE  = "output/used_topics.json"
 
 FACT_TOPICS = [
-    # Science & Space
-    "universe and space shocking facts",
-    "black holes and galaxies",
-    "solar system planets",
-    "quantum physics mind-blowing",
-    "time travel science facts",
-    "parallel universe theory",
-    "sun and stars shocking facts",
-    "moon mysteries and secrets",
+    # Mystery & Dark Secrets (highest views in India)
+    "Bharat ke sabse bade raaz jo sarkar chhupaati hai",
+    "Taj Mahal ke andar ka sach jo koi nahi jaanta",
+    "duniya ki sabse mysterious jagah jo science explain nahi kar sakti",
+    "insaan ke marne ke baad kya hota hai — science ne kya khoja",
+    "ancient Indian temples ke andar chhupi technology",
+    "Bermuda Triangle ka asli sach — ek hi shocking reason",
+    "duniya ke sabse khatarnak conspiracy jo sach nikli",
+    "history ke sabse bade jhooth jo humein padhaye gaye",
 
-    # Earth & Nature
-    "deep ocean terrifying secrets",
-    "earth's core and volcanoes",
-    "extreme weather phenomena",
-    "dinosaurs and prehistoric life",
-    "dangerous animals shocking facts",
-    "sharks and ocean predators",
-    "mysterious places on earth",
-    "ancient trees and forest secrets",
+    # Human Mind & Psychology (very viral)
+    "hamare dimaag ki ek aisi power jo hum use nahi karte",
+    "neend mein aisa kya hota hai jo aapko pata nahi",
+    "insaan ka subconscious mind kitna powerful hai — ek shocking truth",
+    "fear aur darr — ye actually aapko strong banata hai kaise",
+    "kya insaan sach mein sixth sense use kar sakta hai",
+    "akela rehna insaan ke dimaag ko kya karta hai",
 
-    # Human Body & Mind
-    "human body amazing hidden facts",
-    "brain and psychology shocking facts",
-    "sleep and dreams science",
-    "human senses unbelievable facts",
-    "memory and consciousness facts",
-    "fear and adrenaline science",
+    # India & Spiritual (huge audience)
+    "Ramayana aur Mahabharata mein chupi ek science jo aaj prove hui",
+    "Shiva ke damru ki frequency — science ne kya khoja",
+    "Hindu temples south ki taraf kyon bane hote hain — shocking science",
+    "kumbh mela ka aisa raaz jo vigyan bhi nahi samjha",
+    "India mein ek aisi jagah jahan gravity kaam nahi karti",
+    "Garuda Purana mein likha death ke baad ka sach",
 
-    # History & Civilization
-    "ancient India history mysteries",
-    "Indian history and culture shocking",
-    "ancient civilizations secrets",
-    "pyramids and egypt mysteries",
-    "world wars hidden facts",
-    "Indian kings and empires secrets",
+    # Money & Success Psychology (huge engagement)
+    "ameer log subah 5 baje kyon uthte hain — brain science",
+    "paisa kamane ka ek psychological secret jo school nahi sikhata",
+    "duniya ke sabse ameer insaan ne apni pehli kamayi kaise ki",
+    "amir aur gareeb ki soch mein ek asli fark",
 
-    # Technology & Future
-    "technology and AI shocking future",
-    "internet hidden secrets",
-    "robots and automation future",
-    "space travel future facts",
+    # Space & Universe (always trending)
+    "black hole ke andar jaane par aapko kya dikhega",
+    "sun ke andar ek aisi cheez hai jo poori dharti se badi hai",
+    "NASA ne ek aisi awaaz record ki jo space mein suni gayi",
+    "duniya se 7 din baad ek asteroid kitni door se guzrega",
+    "parallel universe actually exist karti hai — proof kya hai",
 
-    # Viral / Shocking
-    "world records unbelievable facts",
-    "money and wealth shocking facts",
-    "food and eating shocking science",
-    "animals with superpowers",
-    "luck and coincidence shocking stories",
-    "numbers and mathematics shocking",
-    "optical illusions brain facts",
-    "death and afterlife science",
+    # Health & Body Secrets (high retention)
+    "hamare sharir mein ek aisa organ hai jiska kaam science abhi bhi nahi jaanti",
+    "roz subah khaali pet ek glass paani pine se kya hota hai body ko",
+    "insaani aansu mein chupi ek science jo aapko hairaan kar de",
+    "pet mein 500 crore bacteria hain — ye aapki zindagi control karte hain",
+
+    # Animals with Superpowers (always viral)
+    "ek aisa jaanwar jo marne ke baad bhi apne dushman ko maar sakta hai",
+    "mantis shrimp ki aankhon ki power — insaan iska 10% bhi nahi dekh sakta",
+    "crows insaan jaisi planning karte hain — proof kya hai",
+    "jellyfish immortal kyun hai — science ka shocking answer",
+
+    # Dark History (very viral in India)
+    "Chandragupta Maurya ne kaise poori duniya jeetne ka plan banaya tha",
+    "1947 mein India ne kya kho diya jo shayad kabhi wapas nahi aayega",
+    "Nazi Germany ka ek aisa experiment jo insaniyat ki sabse badi galti thi",
+    "Cleopatra ke khazane ka sach — abhi bhi nahi mila",
 ]
 
-# Opening hook templates to mix into prompts for variety
+# Viral hook styles — emotional, curious, fear-inducing
 HOOK_STYLES = [
-    "Kya aap jaante hain ki...",
-    "99% log yeh nahi jaante...",
-    "Yeh sun ke aapko yakeen nahi hoga...",
-    "Vigyanik bhi hairaan hain ki...",
-    "Agar aap yeh sach jaante toh...",
-    "Aaj tak kisi ne aapko nahi bataya...",
-    "Duniya ki sabse shocking sach...",
-    "Yeh fact aapki zindagi badal dega...",
+    "Yeh sunkr aapke roye khade ho jayenge...",
+    "99% log apni puri zindagi yeh nahi jaante...",
+    "Agar aapne yeh 60 second nahi dekhe toh aap bahut kuch miss kar rahe ho...",
+    "Yeh raaz jaan ke aapki zindagi badal jayegi...",
+    "Science ne prove kar diya — aur log abhi bhi andheron mein hain...",
+    "Aaj tak kisi ne aapko yeh sach nahi bataya...",
+    "Mujhe yeh share karte hue dar lag raha hai lekin sach batana zaroori hai...",
+    "Yeh fact itna scary hai ki log believe nahi karte...",
+    "Ek sach jo government nahi chahti ki aap jaano...",
+    "Yeh dekh ke aap raat bhar so nahi paoge...",
+]
+
+# Topics to SKIP from trending news (dry, not engaging for shorts)
+SKIP_TRENDING_KEYWORDS = [
+    "election", "result", "vote", "percent turnout", "poll", "seat",
+    "stock", "share price", "market", "nifty", "sensex", "rupee", "dollar",
+    "rrb", "ssc", "exam", "admit card", "answer key",
+    "match score", "ipl score", "cricket score",
+    "weather", "rain", "temperature",
+    "minister", "parliament", "bill passed", "lok sabha",
+    "accident", "fire", "flood latest",
 ]
 
 
 class FactGenerator:
 
     def __init__(self):
-        self.client      = Groq(api_key=Config.GROQ_API_KEY)
-        self.used_titles = self._load_used_titles()
-        self.used_topics = self._load_used_topics()
+        self.client         = Groq(api_key=Config.GROQ_API_KEY)
+        self.used_titles    = self._load_used_titles()
+        self.used_topics    = self._load_used_topics()
+        self._trending_ctx  = {}  # title -> description for prompt context
 
     def generate_fact_video(self, topic: str = None) -> dict | None:
+        news_context = ""
         if not topic:
-            topic = self._pick_fresh_topic()
+            topic, news_context = self._pick_fresh_topic()
 
-        duration = random.randint(45, 58)
+        duration   = random.randint(45, 58)
         hook_style = random.choice(HOOK_STYLES)
 
-        prompt = self._build_prompt(topic, duration, hook_style)
+        prompt = self._build_prompt(topic, duration, hook_style, news_context)
 
         try:
             resp = self.client.chat.completions.create(
@@ -135,63 +156,64 @@ class FactGenerator:
     @staticmethod
     def _system_prompt() -> str:
         return (
-            "Aap ek viral Hindi YouTube Shorts creator hain. "
-            "Aap EK shocking, mind-blowing fact ke baare mein deep-dive karte hain — "
-            "sirf ek fact, lekin itna detailed aur dramatic ki viewer hairan reh jaaye. "
-            "Title mein KABHI bhi '5 facts', '10 facts', ya koi number mat likhna — "
-            "sirf ek specific fact ka dramatic naam hona chahiye Hindi mein. "
-            "Sirf VALID JSON return karein — koi markdown nahi, koi code fences nahi."
+            "Aap India ke #1 viral Hindi YouTube Shorts writer hain. "
+            "Aapki videos log scroll karna band kar dete hain — kyunki pehli line mein hi "
+            "itna curiosity ya darr hota hai ki koi skip nahi kar sakta. "
+            "Aap ek KAHANI ki tarah batate hain — seedha facts nahi, emotional journey. "
+            "Har line mein suspense hona chahiye. Viewer ko lagna chahiye ki yeh sirf unke liye hai. "
+            "Title mein koi number mat likho. Sirf VALID JSON return karo."
         )
 
-    def _build_prompt(self, topic: str, duration: int, hook_style: str) -> str:
+    def _build_prompt(self, topic: str, duration: int, hook_style: str, news_context: str = "") -> str:
         avoid = ", ".join(self.used_titles[-20:]) if self.used_titles else "None"
 
-        return f"""Ek VIRAL Hindi YouTube Short banao — SIRF EK shocking fact ke baare mein: {topic}
+        return f"""Topic: {topic}
 
-FORMAT: YouTube Short (9:16 vertical, {duration} seconds)
-LANGUAGE: Sirf Hindi (Devanagari) — simple, dramatic, emotional
-HOOK: "{hook_style}" style se shuru karo
+Ek aisa Hindi YouTube Short likho jo log skip na kar paayein.
+
+LANGUAGE: Pure Hindi (Devanagari script) — jaise ek dost baat kar raha ho
+HOOK STYLE: "{hook_style}"
+DURATION: {duration} seconds
 AVOID TITLES: {avoid}
 
-STRICT RULES:
-1. SIRF EK hi specific fact — koi list nahi, koi "X facts" nahi
-2. Title Hindi mein hona chahiye — dramatic, emotional, shocking
-   GALAT: "5 Amazing Space Facts" / "10 Shocking Facts"
-   SAHI: "सूरज का यह सच सुनकर आप कांप जाएंगे" / "इंसानी दिमाग का यह राज़ कोई नहीं जानता"
-3. Narration ek hi continuous story ki tarah hona chahiye:
-   - HOOK (3 lines): "{hook_style}" se shocking opening
-   - DEEP DIVE (8-10 lines): Asli fact — numbers, comparisons, "kyon" aur "kaise"
-   - WOW REVEAL (2-3 lines): Sabse unbelievable part
-   - CTA (1 line): "Aisa hi aur jaanne ke liye follow karo!"
-4. Numbers aur comparisons zaroor use karo
-5. thumbnail_image_prompt = ek English sentence jo is fact ka best cinematic visual describe kare
+NARRATION STRUCTURE (yahi formula viral hota hai):
+1. HOOK (5-6 sec): Itna shocking ya curiosity-inducing ki haath ruk jaaye — "{hook_style}" se shuru karo. Koi direct sawaal ya ek unbelievable claim.
+2. TENSION BUILD (10-12 sec): Thoda aur andar le jaao — koi number, comparison, ya "aur yeh toh sirf shuruaat hai..."
+3. MAIN REVELATION (25-28 sec): Asli shocking truth — easy language mein, real numbers, real examples. Jaise kisi dost ko bata rahe ho. Dramatic pauses ke liye '...' use karo.
+4. EMOTIONAL PEAK (7-8 sec): Sabse unbelievable ya emotional part — yahan viewer ko goosebumps aane chahiye.
+5. CTA (3-4 sec): "Yeh video apne uss dost ko bhejo jise yeh pata nahi... aur follow karo aisi aur sacchi baatein jaanne ke liye."
 
-Return ONLY this JSON (no markdown, no code fences):
+RULES:
+- Sirf EK topic — koi list nahi, koi "X cheezein" nahi
+- Title dramatic Hindi mein — max 60 characters — emotional ya curiosity hook wala
+- Numbers real aur specific hone chahiye (e.g. "37 trillion cells", "4.6 billion saal")
+- thumbnail_image_prompt: Ultra-cinematic English prompt — NO text, NO words in image
+
+Return ONLY valid JSON:
 {{
-  "title": "Dramatic Hindi title about ONE specific fact — max 65 chars, NO numbers in title",
-  "thumbnail_text": "3-4 bold Hindi words (Devanagari only)",
-  "thumbnail_mood": "dark|mysterious|dramatic|scary|emotional",
-  "thumbnail_image_prompt": "One cinematic English image prompt for this fact — ultra-realistic 8K photorealistic dramatic lighting NO text NO words",
-  "hook": "2-3 second shocking Hindi opening line",
+  "title": "Viral Hindi title — emotional/shocking/curiosity — max 60 chars, NO numbers",
+  "thumbnail_text": "3-4 bold Hindi words jo thumbnail pe chalein (Devanagari)",
+  "thumbnail_mood": "dark|mysterious|dramatic|scary|emotional|spiritual",
+  "thumbnail_image_prompt": "Cinematic ultra-realistic 8K English prompt — dramatic lighting, no text, no words, photorealistic",
+  "hook": "First shocking line of narration",
   "scenes": [
     {{
       "scene_number": 1,
-      "fact_text": "Complete Hindi narration — HOOK + DEEP DIVE + WOW REVEAL + CTA. Total 50-55 seconds when spoken at normal pace. Use '...' for dramatic pauses. Use shocking numbers.",
+      "fact_text": "Complete Hindi narration following the 5-part structure above. 50-55 seconds at normal pace. Use '...' for dramatic pauses. Pure Devanagari Hindi only.",
       "image_prompts": [
-        "Wide cinematic shot — ultra-realistic photorealistic 8K dramatic lighting NO text NO words",
-        "Close-up dramatic detail — different angle ultra-realistic 8K stunning cinematic NO text",
-        "Another dramatic angle — golden hour or night sky ultra-realistic cinematic NO text"
+        "Opening wide cinematic shot — ultra-realistic 8K dramatic lighting, no text",
+        "Close-up intense detail shot — different dramatic angle, ultra-realistic 8K, no text",
+        "Final emotional/shocking reveal shot — cinematic masterpiece, ultra-realistic 8K, no text"
       ],
       "estimated_duration": 52,
-      "sfx": "wind|space|waves|heartbeat|rumble|forest",
-      "music_mood": "mysterious|epic_cinematic|dramatic_orchestral|suspense",
-      "motion_type": "zoom_in|zoom_out|pan_left|pan_right|tilt_up",
-      "color_grade": "dark_dramatic|blue_cold|teal_orange|night_glow|golden_hour"
+      "sfx": "heartbeat|wind|thunder|waves|rumble|forest|fire",
+      "music_mood": "suspense|mysterious|epic_cinematic|dramatic_orchestral|emotional",
+      "motion_type": "zoom_in|zoom_out|pan_left|tilt_up|pan_right",
+      "color_grade": "dark_dramatic|night_glow|blue_cold|teal_orange|golden_hour|warm_fire"
     }}
   ],
-  "outro": "Aisa hi aur jaanne ke liye follow karo!",
-  "genre": "{topic.split()[0]}",
-  "tags": ["facts hindi", "amazing facts", "rochak tathya", "hindi facts"]
+  "genre": "mystery|psychology|history|science|spiritual|motivation",
+  "tags": ["hindi facts", "rochak tathya", "amazing facts hindi", "viral hindi", "shocking facts"]
 }}"""
 
     def _extract_json(self, raw: str) -> dict | None:
@@ -207,12 +229,17 @@ Return ONLY this JSON (no markdown, no code fences):
                 pass
         return None
 
-    def _pick_fresh_topic(self) -> str:
-        recent = set(self.used_topics[-12:])
-        fresh  = [t for t in FACT_TOPICS if t not in recent]
+    def _pick_fresh_topic(self) -> tuple[str, str]:
+        """Returns (topic_string, news_context_string). Uses curated viral topics always."""
+        recent = set(t.lower() for t in self.used_topics[-20:])
+
+        # Always use our curated viral topic list — trending news topics are too dry
+        fresh = [t for t in FACT_TOPICS if t.lower() not in recent]
         if not fresh:
             fresh = FACT_TOPICS
-        return random.choice(fresh)
+        picked = random.choice(fresh)
+        logger.info(f"Topic selected: {picked}")
+        return picked, ""
 
     def _load_used_titles(self) -> list:
         try:

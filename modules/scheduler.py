@@ -59,14 +59,18 @@ class DailyScheduler:
         self.scheduler.start()
 
     def _run_short_job(self):
-        content_type = random.choice(Config.CONTENT_TYPES)
         now = datetime.now(IST).strftime("%Y-%m-%d %H:%M IST")
-        logger.info(f"[SHORT] Job at {now} -- {content_type}")
-        result = self.pipeline.run(genre=content_type, upload=True, force_short=True)
+        logger.info(f"[FACTS] Job at {now}")
+        result = self.pipeline.run(
+            genre=None,
+            upload=True,
+            force_short=True,
+            facts_mode=True,
+        )
         if result["status"] == "success":
-            logger.info(f"[OK] Short uploaded: {result.get('title')}")
+            logger.info(f"[OK] Uploaded: {result.get('title')}")
         else:
-            logger.error(f"[FAIL] Short failed: {result.get('error')}")
+            logger.error(f"[FAIL] Failed: {result.get('error')}")
 
     def _run_long_job(self):
         content_type = random.choice(Config.CONTENT_TYPES)
