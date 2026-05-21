@@ -9,12 +9,14 @@ import os
 import json
 import logging
 import uuid
+import random
 from datetime import datetime
 
 from config import Config
 from modules.concept_generator import ConceptGenerator
 from modules.story_generator   import StoryGenerator
 from modules.fact_generator    import FactGenerator
+from modules.skit_generator    import SkitGenerator
 from modules.voice_generator   import VoiceGenerator
 from modules.image_generator   import ImageGenerator
 from modules.video_assembler   import VideoAssembler
@@ -31,6 +33,7 @@ class VideoPipeline:
         self.concept_gen = ConceptGenerator()
         self.story_gen   = StoryGenerator()
         self.fact_gen    = FactGenerator()
+        self.skit_gen    = SkitGenerator()
         self.voice_gen   = VoiceGenerator()
         self.img_gen     = ImageGenerator()
         self.video_asm   = VideoAssembler()
@@ -47,15 +50,20 @@ class VideoPipeline:
         story_mode: bool = False,
         facts_mode: bool = False,
         cinematic_mode: bool = False,
+        skit_mode: bool = False,
     ) -> dict:
-        mode = "facts" if facts_mode else ("story" if story_mode else "cinematic")
+        mode = ("skit" if skit_mode else
+                "facts" if facts_mode else
+                "story" if story_mode else "cinematic")
         video_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:6]
         logger.info(f"Pipeline START | id={video_id} | mode={mode}")
 
         result = {"video_id_local": video_id, "status": "failed", "yt_video_id": None, "title": None}
 
         try:
-            if facts_mode:
+            if skit_mode:
+                result = self._run_skit_mode(video_id, genre, upload, privacy, result)
+            elif facts_mode:
                 result = self._run_facts_mode(video_id, genre, upload, privacy, result)
             elif story_mode:
                 result = self._run_story_mode(video_id, genre, upload, privacy, force_short, result)
@@ -67,6 +75,102 @@ class VideoPipeline:
 
         logger.info(f"Pipeline END | status={result['status']}")
         return result
+
+    # ── Skit mode (viral Indian comedy) ──────────────────────────────────────
+
+    def _run_skit_mode(self, video_id, scenario, upload, privacy, result):
+        logger.info("Step 1/6 — Generating comedy skit...")
+        data = self.skit_gen.generate_skit(scenario)
+        if not data:
+            raise RuntimeError("Skit generation failed")
+
+        result["title"] = data.get("title")
+        self._save_json(data, video_id)
+
+        logger.info("Step 2/6 — Generating scene images + audio...")
+        scene_assets = self._process_skit_scenes(data, video_id)
+        if not scene_assets:
+            raise RuntimeError("All skit scenes failed")
+
+        logger.info("Step 3/6 — Assembling video...")
+        video_path = self.video_asm.assemble(data, scene_assets, video_id)
+        if not video_path:
+            raise RuntimeError("Video assembly failed")
+
+        logger.info("Step 4/6 — Generating thumbnail...")
+        thumb_prompt = (data.get("thumbnail_image_prompt")
+                        or data.get("scenes", [{}])[0].get("image_prompt", "funny Indian comedy scene"))
+        thumb_base = self.img_gen.generate_thumbnail_image(
+            thumb_prompt, video_id, mood=data.get("thumbnail_mood", "funny")
+        )
+        thumbnail = self.thumb_cr.create(data, video_id, thumb_base)
+
+        logger.info("Step 5/6 — Generating SEO...")
+        seo = self.seo_gen.generate(data)
+
+        if upload:
+            logger.info("Step 6/6 — Uploading to YouTube...")
+            yt_id = self.uploader.upload(video_path, thumbnail, seo, data, privacy=privacy)
+            result["yt_video_id"] = yt_id
+            result["video_id"]    = yt_id
+            if yt_id:
+                logger.info(f"[LIVE] https://youtu.be/{yt_id}")
+        else:
+            logger.info(f"Step 6/6 — Skipped. File: {video_path}")
+            result["video_id"] = None
+
+        result["status"]     = "success"
+        result["video_path"] = video_path
+        return result
+
+    def _process_skit_scenes(self, data: dict, video_id: str) -> list[dict]:
+        scenes       = data.get("scenes", [])
+        scene_assets = []
+
+        for idx, scene in enumerate(scenes):
+            logger.info(f"  Skit scene {idx+1}/{len(scenes)}...")
+
+            img_path = self.img_gen.generate_scene_image(
+                prompt=scene.get("image_prompt", "funny Indian scene cinematic"),
+                scene_idx=idx,
+                story_id=video_id,
+                is_short=True,
+            )
+
+            audio_path = None
+            actual_dur = float(scene.get("estimated_duration", 15))
+            narration  = scene.get("narration", "").strip()
+
+            if narration:
+                import os as _os
+                audio_dir  = _os.path.join("output/audio", video_id)
+                _os.makedirs(audio_dir, exist_ok=True)
+                audio_file = _os.path.join(audio_dir, f"s{idx:02d}_skit.mp3")
+
+                result = self.voice_gen.generate(
+                    text=narration,
+                    voice_key="narrator_female",
+                    emotion=scene.get("emotion", "excited"),
+                    output_path=audio_file,
+                )
+                if result:
+                    from modules.voice_generator import _audio_duration
+                    actual_dur = _audio_duration(result)
+                    audio_path = result
+
+            scene_assets.append({
+                "image_path":  img_path,
+                "image_paths": [img_path] if img_path else [],
+                "audio_path":  audio_path,
+                "subtitles":   [],
+                "duration":    max(actual_dur, float(scene.get("estimated_duration", 15))),
+                "sfx":         "crowd",
+                "music_mood":  "funny",
+                "motion_type": random.choice(["zoom_in", "zoom_out", "pan_left", "pan_right"]),
+                "color_grade": "teal_orange",
+            })
+
+        return scene_assets
 
     # ── Facts mode ────────────────────────────────────────────────────────────
 

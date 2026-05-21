@@ -86,12 +86,13 @@ def main():
     parser.add_argument("--story",      action="store_true", help="Story mode — Hindi narration (legacy)")
     parser.add_argument("--facts",      action="store_true", help="Facts mode — female voice narrates Hindi facts over cinematic visuals")
     parser.add_argument("--cinematic",  action="store_true", help="Cinematic mode — pure visuals, no narration")
+    parser.add_argument("--skit",       action="store_true", help="Skit mode — viral Indian comedy with AI characters (default)")
     parser.add_argument("--privacy",    default="public", choices=["public", "unlisted", "private"])
     args = parser.parse_args()
 
-    # Default to facts mode when no mode flag is given
-    if not args.story and not args.facts and not args.cinematic:
-        args.facts = True
+    # Default to skit mode when no mode flag is given
+    if not args.story and not args.facts and not args.cinematic and not args.skit:
+        args.skit = True
 
     setup_logging()
     logger = logging.getLogger("main")
@@ -134,6 +135,7 @@ def main():
             story_mode=args.story,
             facts_mode=args.facts,
             cinematic_mode=args.cinematic,
+            skit_mode=args.skit,
         )
 
         def safe(s):
