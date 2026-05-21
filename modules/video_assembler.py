@@ -200,7 +200,7 @@ class VideoAssembler:
             if not raw_video:
                 return None
 
-        # Mux with audio
+        # Mux with audio — pad audio to match video duration so it never cuts early
         if audio_path and os.path.exists(audio_path):
             audio_fwd = audio_path.replace("\\", "/")
             raw_fwd   = raw_video.replace("\\", "/")
@@ -209,9 +209,10 @@ class VideoAssembler:
                 "ffmpeg", "-y",
                 "-i", raw_fwd,
                 "-i", audio_fwd,
-                "-map", "0:v", "-map", "1:a",
+                "-filter_complex", f"[1:a]apad=whole_dur={duration}[a]",
+                "-map", "0:v", "-map", "[a]",
                 "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
-                "-shortest", out_fwd,
+                "-t", str(duration), out_fwd,
             ]
         else:
             raw_fwd = raw_video.replace("\\", "/")

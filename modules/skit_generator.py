@@ -69,6 +69,30 @@ SKIT_SCENARIOS = [
     "Unicorn Indian shaadi mein ghoda ban gaya, sab pehchaan gaye",
     "Giant octopus Indian dhobi ghat pe kapde dho raha hai",
     "T-Rex Indian cricket match mein fielding kar raha hai",
+
+    # Cockroach Janata Party — viral meme political satire
+    "Cockroach neta ji election rally mein bhashan de raha hai, logon ki bheed jama hai",
+    "Cockroach Janata Party ka president parliament mein bada bhashan de raha hai",
+    "Cockroach neta ne chunav jeet liya, victory speech de raha hai stage pe",
+    "Cockroach minister sahab press conference mein media ko jawab de rahe hain",
+    "Cockroach CM ne seedha helicopter se khet mein landing ki, kisan hairan hain",
+    "Cockroach neta ji ka birthday party — hazaron supporters cake laaye hain",
+    "Cockroach party ka manifesto — '5 saal mein sabko rasoi milegi', logo ne padha",
+
+    # Bollywood style characters
+    "Ek bada Bollywood star auto-rickshaw mein chadh gaya, driver ne nahi pehchaana",
+    "Famous heroine sabzi mandi mein bhaav maang rahi hai baingan ke liye",
+    "Bollywood villain Indian railway platform pe ticket queue mein khada hai",
+    "Famous item song dancer chai tapri pe masala chai pi rahi hai",
+    "Bollywood action hero Mumbai local train mein khidki seat ke liye lad raha hai",
+    "Film director India Gate ke bahar biryani kha raha hai, fans ne ghera",
+
+    # Generic neta ji (politician parody — no real names)
+    "Bada neta ji UP ki sadak pe pothole mein gir gaye, live coverage ho rahi hai",
+    "Neta ji ka helicopter khet mein emergency landing, kisan ne lassi pilai",
+    "Desh ke sabse bade neta ji pani puri wale se bhaav maang rahe hain",
+    "Neta ji ki rally mein bijli chali gayi, generator wale se jhagda ho gaya",
+    "Mukhyamantri ji auto wale se kiraya negotiate kar rahe hain, driver shocked",
 ]
 
 HOOK_STYLES = [
