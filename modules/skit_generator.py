@@ -163,12 +163,14 @@ Narrator dono characters ki awaaz mein bolta hai with clear name tags.
 SCENE 3 (12-14 sec) — PUNCHLINE + CTA:
 Sabse funny twist. Unexpected ending. "Yeh video apne uss dost ko bhejo jo yeh nahi jaanta... aur follow karo!"
 
-RULES:
-- Pure Hindi (Devanagari) narration — fast, funny, energetic
-- Character dialogues with name: "Gorilla: 'Bhaiya...'" / "Sabzi wala: 'Sahab...'"
-- Image prompts: ultra-realistic photorealistic 8K, Indian setting, NO text/words in image
-- Each image must clearly show the character + Indian background
-- Title: Funny Hindi — max 55 chars, no numbers
+CRITICAL IMAGE PROMPT RULES — BAHUT IMPORTANT:
+- Har scene ka image_prompt EXACTLY wohi dikhaye jo us scene ki narration mein ho raha hai
+- Agar narration mein "Gorilla sabzi wala se tamatar ka bhaav maang raha hai" — image mein gorilla + sabzi wala + tamatar hona CHAHIYE
+- Agar narration mein "Hulk reporter ka mic pakad leta hai" — image mein hulk + reporter + mic hona CHAHIYE
+- Agar narration mein "crowd hasne lagti hai" — image mein wahi scene + crowd reaction hona CHAHIYE
+- NEVER generic scene — ALWAYS exact action from narration
+- Character clearly visible, Indian setting, specific action happening, realistic faces showing emotion
+- ultra-realistic photorealistic 8K, cinematic lighting, NO text NO words in image
 
 Return ONLY valid JSON:
 {{
@@ -181,7 +183,7 @@ Return ONLY valid JSON:
     {{
       "scene_number": 1,
       "narration": "Hindi narration — narrator + character dialogues. Fast and funny. Use '...' for dramatic pauses.",
-      "image_prompt": "ultra-realistic photorealistic 8K cinematic [character] in [Indian setting], [specific action], hyperdetailed, dramatic lighting, NO text NO words",
+      "image_prompt": "EXACT scene from narration: ultra-realistic photorealistic 8K [character doing EXACTLY what narration says] in [specific Indian location from narration], [people reacting as described], hyperdetailed, dramatic lighting, NO text NO words",
       "motion_prompt": "character walks confidently into frame, people around react with shock and amazement, natural fluid movement, cinematic",
       "emotion": "excited",
       "estimated_duration": 12
@@ -189,7 +191,7 @@ Return ONLY valid JSON:
     {{
       "scene_number": 2,
       "narration": "Main comedy scene narration with dialogues.",
-      "image_prompt": "ultra-realistic photorealistic 8K [character] [action] in [Indian setting], shocked people around, cinematic, NO text",
+      "image_prompt": "EXACT scene from narration: ultra-realistic photorealistic 8K [character doing EXACTLY what narration says — specific gesture/action/dialogue moment], [other person reacting as described in narration], [specific Indian setting], cinematic, NO text",
       "motion_prompt": "character gestures expressively while arguing or talking, other person reacts with surprise, both move naturally, funny interaction",
       "emotion": "happy",
       "estimated_duration": 26
@@ -197,7 +199,7 @@ Return ONLY valid JSON:
     {{
       "scene_number": 3,
       "narration": "Punchline + CTA — 'Yeh video apne dost ko bhejo... aur follow karo aisi aur masti ke liye!'",
-      "image_prompt": "ultra-realistic photorealistic 8K [character] funny final pose in [Indian setting], crowd reaction, cinematic, NO text",
+      "image_prompt": "EXACT punchline moment from narration: ultra-realistic photorealistic 8K [character in final funny pose EXACTLY as narration describes], [crowd/people reacting as described], [same Indian setting], cinematic, NO text",
       "motion_prompt": "character does a funny triumphant pose or walks away with swagger, crowd cheers or laughs, natural movement",
       "emotion": "excited",
       "estimated_duration": 13
