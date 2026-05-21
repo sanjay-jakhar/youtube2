@@ -43,11 +43,12 @@ class ImageGenerator:
         else:
             w, h = Config.IMAGE_WIDTH, Config.IMAGE_HEIGHT
 
+        seed = random.randint(10000, 99999)
         style_suffix = random.choice(VISUAL_STYLES)
         full_prompt = prompt + style_suffix
         url = (
             f"{Config.POLLINATIONS_URL}/{quote(full_prompt)}"
-            f"?width={w}&height={h}&nologo=true&model=flux"
+            f"?width={w}&height={h}&nologo=true&model=flux&seed={seed}"
         )
 
         for attempt in range(retries):
@@ -58,6 +59,9 @@ class ImageGenerator:
                 with open(out_path, "wb") as f:
                     f.write(resp.content)
                 logger.info(f"Scene image saved: {out_path}")
+                # Save source URL alongside image for Kling AI to use directly
+                with open(out_path + ".url", "w") as f:
+                    f.write(url)
                 return out_path
             except Exception as e:
                 logger.warning(f"Image attempt {attempt+1} failed: {e}")
