@@ -2,7 +2,8 @@ name: AI YouTube Auto Upload
 
 on:
   schedule:
-    - cron: '30 2 * * *'   # 8:00 AM IST daily (2:30 AM UTC)
+    - cron: '30 1 * * *'   # 7:00 AM IST (1:30 AM UTC)
+    - cron: '30 13 * * *'  # 7:00 PM IST (1:30 PM UTC)
   workflow_dispatch:        # Manual trigger from GitHub UI
 
 jobs:
@@ -38,8 +39,8 @@ jobs:
           printf 'HF_TOKEN=%s\n' '${{ secrets.HF_TOKEN }}' >> .env
           mkdir -p output/videos output/images output/audio output/stories output/thumbnails logs assets/music assets/fonts assets/sfx
 
-      - name: Generate and upload 2 videos
-        run: python main.py --skit --count 2 --privacy public
+      - name: Generate and upload 1 video
+        run: python main.py --skit --count 1 --privacy public
 
       - name: Save used topics to repo (prevents repetition)
         if: always()
